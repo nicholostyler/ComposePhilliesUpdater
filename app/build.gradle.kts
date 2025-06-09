@@ -50,6 +50,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.navigation.compose.android)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -67,4 +68,9 @@ dependencies {
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0") 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.0")
+
+    // Material navigation
+    implementation("androidx.compose.material:material-icons-core:1.6.7") // For Icons.Filled
+    implementation("androidx.compose.material:material-icons-extended:1.6.7") // For more icons
+    implementation("androidx.navigation:navigation-compose:2.7.7") // Check for the latest version
 }

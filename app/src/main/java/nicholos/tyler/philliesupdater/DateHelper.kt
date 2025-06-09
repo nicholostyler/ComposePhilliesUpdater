@@ -1,6 +1,8 @@
 package nicholos.tyler.philliesupdater
 
 import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.text.format
 import java.util.Locale
@@ -34,6 +36,19 @@ class DateHelper {
                 // Handle potential parsing exceptions (e.g., if the input string is not valid)
                 e.printStackTrace() // Log the error
                 null // Or return a default string like "Invalid Date"
+            }
+        }
+
+        fun formatIsoDateToTimeString(isoDateString: String): String? {
+            return try {
+                val zonedDateTime = ZonedDateTime.parse(isoDateString)
+                    .withZoneSameInstant(ZoneId.systemDefault())
+                val formatter = DateTimeFormatter.ofPattern("hh:mm a")
+                val time = zonedDateTime.toLocalTime().format(formatter)
+                return time.toString()
+            } catch (e: Exception) {
+                println(e.message)
+                return ""
             }
         }
     }

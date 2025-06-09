@@ -19,4 +19,20 @@ interface BaseballService {
         @Query("teamId") teamId: Int,
     ): Response<GameRoot>
 
+    @GET("api/v1/standings")
+    suspend fun getStandings(
+        @Query("leagueId") leagueId: Int,
+    ): Response<StandingsResponse>
+
+    @GET("api/v1/teams/{teamId}/roster")
+    suspend fun getTeamRoster(
+        @Path("teamId") teamId: Int,
+    ): Response<RosterResponse>
+
+    @GET("api/v1/teams/{teamId}")
+    suspend fun getTeam(
+        @Path("teamId") teamId: Int,
+    ): Response<TeamResponse>
+
+
 }

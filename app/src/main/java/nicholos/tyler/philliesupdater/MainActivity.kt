@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,151 +15,175 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import nicholos.tyler.philliesupdater.ui.theme.PhilliesUpdaterTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.launch
+import nicholos.tyler.philliesupdater.ui.theme.PhilliesUpdaterTheme
 
+val items = listOf(
+    Screen.Home,
+    Screen.Schedule,
+    Screen.Team,
+    Screen.Settings
+)
 
 class MainActivity : ComponentActivity() {
+
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             PhilliesUpdaterTheme {
                 val baseballViewModel : BaseballViewModel = viewModel()
+                val navController = rememberNavController()
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentDestination = navBackStackEntry?.destination
+                val selectedTeam by baseballViewModel.selectedTeam.collectAsState()
 
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    HomePage(modifier = Modifier.padding(innerPadding), baseballViewModel)
+                val currentScreen = items.find { screen ->
+                    currentDestination?.hierarchy?.any { it.route == screen.route } == true
                 }
-            }
-        }
-    }
-}
 
-@Composable
-fun HomePage(modifier: Modifier, baseballVM: BaseballViewModel) {
-    val scheduleData by baseballVM.baseballScheduleData.collectAsState()
-    val gameDetails by baseballVM.baseballGameData.collectAsState()
-    val selectedGame by baseballVM.selectedGame.collectAsState()
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    topBar = {
+                        if (selectedTeam != null) {
+                            val resolvedTitle = when {
+                                currentDestination?.route?.startsWith(Screen.GameDetail.route.substringBefore("/{")) == true -> {
+                                    "Game Details"
+                                }
+                                currentDestination?.route == Screen.Team.route -> {
+                                    selectedTeam?.name ?: "Team"
+                                }
+                                else -> {
+                                    currentScreen?.label ?: "Phillies Updater"
+                                }
+                            }
 
-    LaunchedEffect(Unit) {
-        baseballVM.fetchBaseballSchedule()
-    }
-
-
-
-    if (scheduleData != null) {
-        LaunchedEffect(Unit) {
-            baseballVM.setSelectedGame(scheduleData!!.dates?.get(0)?.games?.get(0)!!)
-        }
-
-        Column(modifier = modifier.fillMaxSize()) {
-            ScheduleCardList(baseballVM, scheduleData!!.dates, Modifier.fillMaxWidth())
-            ScoreCard(Modifier.fillMaxWidth(), selectedGame)
-
-            if (gameDetails != null) {
-                gameDetails?.liveData?.plays?.let {
-                    it.allPlays?.let { it1 ->
-                        GameDetailList(
-                            Modifier.fillMaxSize(),
-                            it1
-                        )
-                    }
-                }
-            } else {
-                Box(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-        }
-
-    } else {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
-        }
-    }
+                            TopAppBar(
+                                title = {
+                                    Text(text = resolvedTitle)
+                                },
+                                navigationIcon = {
+                                    if (currentDestination?.route?.startsWith("game_detail") == true) {
+                                        IconButton(onClick = { navController.popBackStack() }) {
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Default.ArrowBack,
+                                                contentDescription = "Back"
+                                            )
+                                        }
+                                    }
+                                },
+                            )
+                        }
 
 
-}
-
-@Composable
-fun ScheduleCard(baseballVM: BaseballViewModel, game: Game, modifier: Modifier = Modifier) {
-    Card(
-                modifier = modifier
-                    .width(200.dp)
-                    .height(100.dp)
-                    .then(modifier)
-                    .clickable {
-                            baseballVM.setSelectedGame(game)
                     },
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize() // Fill the card
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.SpaceBetween, // Example arrangement
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    DateHelper.formatIsoDateToDisplayString(game.gameDate.toString())?.let {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.titleMedium
-                        )
+                            bottomBar = {
+                                if (currentDestination?.route?.startsWith("game_detail") != true) {
+                                    NavigationBar {
+                                        val navBackStackEntry by navController.currentBackStackEntryAsState()
+                                        val currentDestination = navBackStackEntry?.destination
+
+                                        items.forEach { screen ->
+                                            NavigationBarItem(
+                                                icon = {
+                                                    Icon(
+                                                        screen.icon,
+                                                        contentDescription = screen.label
+                                                    )
+                                                },
+                                                label = { Text(screen.label) },
+                                                selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+                                                onClick = {
+                                                    navController.navigate(screen.route) {
+                                                        // Pop up to the start destination of the graph to
+                                                        // avoid building up a large stack of destinations
+                                                        // on the back stack as users select items
+                                                        popUpTo(navController.graph.findStartDestination().id) {
+                                                            saveState = true
+                                                        }
+                                                        // Avoid multiple copies of the same destination when
+                                                        // reselecting the same item
+                                                        launchSingleTop = true
+                                                        // Restore state when reselecting a previously selected item
+                                                        restoreState = true
+                                                    }
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                ) { innerPadding ->
+                    NavHost(
+                        navController = navController,
+                        startDestination = Screen.Home.route,
+                        modifier = Modifier.padding(innerPadding)
+                    ) {
+                        composable(Screen.Home.route) {
+                            HomePage(modifier = Modifier.fillMaxSize(), baseballViewModel, navController)
+                        }
+
+                        composable(Screen.Schedule.route) {
+                            SchedulePage(modifier = Modifier.fillMaxSize(), baseballViewModel, navController)
+                        }
+                        composable(Screen.Team.route) {
+                            TeamPage(modifier = Modifier.fillMaxSize(), baseballViewModel, navController)
+                        }
+                        composable(Screen.Settings.route) {
+                            SettingsPage()
+                        }
+                        composable(Screen.GameDetail.route) { navBackStackEntry ->
+                            val gamePk = navBackStackEntry.arguments?.getString("gamePk")?.toLongOrNull()
+                            val detailUiState by baseballViewModel.detailPageUiState.collectAsState()
+
+                            if (gamePk != null && detailUiState.game.gamePk == gamePk) {
+                                GameDetailPage().GameDetailScreen(
+                                    modifier = Modifier.fillMaxSize(),
+                                    plays = detailUiState.plays,
+                                    game = detailUiState.game
+                                )
+                            } else {
+                                Text("Game not found!")
+                            }
+                        }
+
                     }
-                    Text(
-                        text = game.teams?.away?.team?.name.toString() + " @ " + game.teams?.home?.team?.name.toString(),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
                 }
             }
-}
-
-@Composable
-fun ScheduleCardList(baseballVM: BaseballViewModel, dates: List<Date>?, modifier: Modifier = Modifier) {
-    val validGames = dates
-        ?.flatMap { date ->
-            date.games
-                ?.filter { it?.status?.detailedState != "Postponed" }
-                ?.mapNotNull { game -> game }
-                ?: emptyList()
-        } ?: emptyList()
-
-    LazyRow(
-        modifier = modifier
-            .fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp), // Padding around the list
-        horizontalArrangement = Arrangement.spacedBy(12.dp) // Space between cards
-    ) {
-        items(
-            items = validGames,
-            key = { it.gamePk!! },
-        ) { game ->
-                ScheduleCard(baseballVM, game, modifier)
         }
     }
 }
@@ -172,7 +195,6 @@ fun ScoreCard(modifier: Modifier, game: Game?) {
             .fillMaxWidth()
             .height(150.dp)
             .padding(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Box(
@@ -205,43 +227,6 @@ fun ScoreCard(modifier: Modifier, game: Game?) {
                     }
                 }
             }
-        }
-    }
-}
-
-
-@Composable
-fun GameDetailList(modifier: Modifier, plays: List<Play>) {
-    if (plays.isNullOrEmpty()) {
-        Box(
-            modifier = modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Game has not happened yet",
-                style = MaterialTheme.typography.bodyLarge
-            )
-        }
-    } else {
-        LazyColumn(
-            modifier = modifier.fillMaxSize(), // LazyColumn takes the full available space
-            contentPadding = PaddingValues(
-                horizontal = 16.dp,
-                vertical = 8.dp
-            ), // Padding around the whole list
-            verticalArrangement = Arrangement.spacedBy(8.dp) // Padding around the list
-        ) {
-            item {
-                Text(
-                    text = "Game Details",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-            }
-            items(items = plays!!, key = { it.result?.description.toString() }) { play ->
-                play.result?.description?.let { Text(text = it) }
-            }
-
         }
     }
 }

@@ -95,6 +95,8 @@ data class Team(
     val link: String? = null,
 )
 
+
+
 @Serializable
 data class Home(
     val leagueRecord: LeagueRecord? = null,
@@ -115,3 +117,35 @@ data class Venue(
 data class Content(
     val link: String? = null,
 )
+
+fun List<Game>.toScheduleGameDataList(yourTeamName: String): List<ScheduleGameData> {
+    return this.mapNotNull { game ->
+        val gameDateTime = game.gameDate ?: return@mapNotNull null
+        val dateTimeParts = gameDateTime.split("T")
+        val date = dateTimeParts.getOrNull(0) ?: return@mapNotNull null
+        val time = dateTimeParts.getOrNull(1)?.removeSuffix("Z") ?: "TBD"
+
+        val homeTeam = game.teams?.home?.team?.name ?: return@mapNotNull null
+        val awayTeam = game.teams.away?.team?.name ?: return@mapNotNull null
+
+        val homeScore = game.teams.home.score ?: 0
+        val awayScore = game.teams.away.score ?: 0
+
+        val status = game.status?.detailedState ?: "Unknown"
+        val venueName = game.venue?.name ?: "Unknown Venue"
+
+        ScheduleGameData(
+            date = date,
+            time = time,
+            awayTeamName = awayTeam,
+            opponentLogoUrl = "",
+            homeTeamName = homeTeam,
+            homeTeamScore = homeScore,
+            awayTeamScore = awayScore,
+            status = status,
+            venue = venueName,
+            prefix = if (homeTeam == yourTeamName) "vs" else "@",
+            game = game
+        )
+    }
+}

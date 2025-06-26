@@ -1,6 +1,7 @@
 package nicholos.tyler.philliesupdater
 
 import kotlinx.serialization.Serializable
+import nicholos.tyler.philliesupdater.viewmodel.TeamScheduleViewModel.ScheduleGameData
 
 @Serializable
 data class GameRoot(

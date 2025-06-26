@@ -1,15 +1,15 @@
 package nicholos.tyler.philliesupdater
 
-enum class Divisions(val displayName: String) {
-    AL_EAST("American League East"),
-    AL_CENTRAL("American League Central"),
-    AL_WEST("American League West"),
-    NL_EAST("National League East"),
-    NL_CENTRAL("National League Central"),
-    NL_WEST("National League West")
+enum class Divisions(val divisionId: Int, val displayName: String) {
+    AL_EAST(201, "American League East"),
+    AL_CENTRAL(202, "American League Central"),
+    AL_WEST(200, "American League West"),
+    NL_EAST(204, "National League East"),
+    NL_CENTRAL(205, "National League Central"),
+    NL_WEST(203, "National League West")
 }
 
-enum class MLBTeam(val teamId: Int, val displayName: String, val Divisions: Divisions) {
+enum class MLBTeam(val teamId: Int, val displayName: String, val Divisions: Divisions, val isNationalLeague: Boolean = false) {
     // American League East
     ORIOLES(110, "Baltimore Orioles", Divisions.AL_EAST),
     RED_SOX(111, "Boston Red Sox", Divisions.AL_EAST),
@@ -32,23 +32,30 @@ enum class MLBTeam(val teamId: Int, val displayName: String, val Divisions: Divi
     RANGERS(140, "Texas Rangers", Divisions.AL_WEST),
 
     // National League East
-    BRAVES(144, "Atlanta Braves", Divisions.NL_EAST),
-    MARLINS(146, "Miami Marlins", Divisions.NL_EAST),
-    METS(121, "New York Mets", Divisions.NL_EAST),
-    PHILLIES(143, "Philadelphia Phillies", Divisions.NL_EAST),
-    NATIONALS(120, "Washington Nationals", Divisions.NL_EAST),
+    BRAVES(144, "Atlanta Braves", Divisions.NL_EAST, true),
+    MARLINS(146, "Miami Marlins", Divisions.NL_EAST, true),
+    METS(121, "New York Mets", Divisions.NL_EAST, true),
+    PHILLIES(143, "Philadelphia Phillies", Divisions.NL_EAST, true),
+    NATIONALS(120, "Washington Nationals", Divisions.NL_EAST, true),
 
     // National League Central
-    CUBS(112, "Chicago Cubs", Divisions.NL_CENTRAL),
-    REDS(113, "Cincinnati Reds", Divisions.NL_CENTRAL),
-    BREWERS(158, "Milwaukee Brewers", Divisions.NL_CENTRAL),
-    PIRATES(134, "Pittsburgh Pirates", Divisions.NL_CENTRAL),
-    CARDINALS(138, "St. Louis Cardinals", Divisions.NL_CENTRAL),
+    CUBS(112, "Chicago Cubs", Divisions.NL_CENTRAL, true),
+    REDS(113, "Cincinnati Reds", Divisions.NL_CENTRAL, true),
+    BREWERS(158, "Milwaukee Brewers", Divisions.NL_CENTRAL, true),
+    PIRATES(134, "Pittsburgh Pirates", Divisions.NL_CENTRAL, true),
+    CARDINALS(138, "St. Louis Cardinals", Divisions.NL_CENTRAL, true),
 
     // National League West
-    DIAMONDBACKS(109, "Arizona Diamondbacks", Divisions.NL_WEST),
-    ROCKIES(115, "Colorado Rockies", Divisions.NL_WEST),
-    DODGERS(119, "Los Angeles Dodgers", Divisions.NL_WEST),
-    PADRES(135, "San Diego Padres", Divisions.NL_WEST),
-    GIANTS(137, "San Francisco Giants", Divisions.NL_WEST);
+    DIAMONDBACKS(109, "Arizona Diamondbacks", Divisions.NL_WEST, true),
+    ROCKIES(115, "Colorado Rockies", Divisions.NL_WEST, true),
+    DODGERS(119, "Los Angeles Dodgers", Divisions.NL_WEST, true),
+    PADRES(135, "San Diego Padres", Divisions.NL_WEST, true),
+    GIANTS(137, "San Francisco Giants", Divisions.NL_WEST, true);
+
+    companion object {
+        fun fromId(teamId: Int): MLBTeam? = entries.find { it.teamId == teamId }
+    }
+
 }
+
+

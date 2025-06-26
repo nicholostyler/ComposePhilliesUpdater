@@ -1,5 +1,8 @@
 package nicholos.tyler.philliesupdater
 
+import nicholos.tyler.philliesupdater.data.models.SeasonResponse
+import nicholos.tyler.philliesupdater.data.models.TeamLeadersResponse
+import nicholos.tyler.philliesupdater.data.models.TeamLeadersResponseRaw
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Path
@@ -33,6 +36,19 @@ interface BaseballService {
     suspend fun getTeam(
         @Path("teamId") teamId: Int,
     ): Response<TeamResponse>
+
+    @GET("api/v1/seasons")
+    suspend fun getSeason(
+        @Query("sportId") sportId: Int,
+        @Query("season") season: Int
+    ): Response<SeasonResponse>
+
+    @GET("api/v1/teams/{teamId}/leaders")
+    suspend fun getTeamLeaders(
+        @Path("teamId") teamId: Int,
+        @Query("leaderCategories") leaderCategories: String,
+        @Query("season") season: Int,
+    ): Response<TeamLeadersResponseRaw>
 
 
 }

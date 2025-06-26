@@ -4,21 +4,23 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement // Assuming this was an intended import based on usage
 
 fun GameDetailResponse.toLiveGameData(selectedGame: Game?): LiveGameData? {
-    val currentPlay = this?.liveData?.plays?.currentPlay
+    val currentPlay = this.liveData?.plays?.currentPlay
     val linescore = this.liveData?.linescore
+    val gameDetail = this.gameData
 
     return LiveGameData(
-        homeTeamName = selectedGame?.teams?.home?.team?.name ?: "Unknown",
-        awayTeamName = selectedGame?.teams?.away?.team?.name ?: "Unknown",
-        homeTeamScore = selectedGame?.teams?.home?.score ?: 0,
-        awayTeamScore = selectedGame?.teams?.away?.score ?: 0,
+        homeTeamName = gameDetail?.teams?.home?.name ?: "Unknown",
+        awayTeamName = gameDetail?.teams?.away?.name ?: "Unknown",
+        homeTeamScore = (linescore?.teams?.home?.runs ?: 0).toLong(),
+        awayTeamScore = (linescore?.teams?.away?.runs ?: 0).toLong(),
         inning = currentPlay?.about?.inning ?: 0,
         inningSuffix = BaseballHelper.getInningSuffix(currentPlay?.about?.inning) ?: "0",
         isTopInning = currentPlay?.about?.isTopInning ?: false,
         outs = linescore?.outs ?: 0,
         runnersOnBase = BaseballHelper.countRunnersOnBase(this).toString() ?: "0",
-        isGameOver = selectedGame?.status?.detailedState == ("Final" ?: false),
-        status = selectedGame?.status?.detailedState ?: "Unknown"
+        isGameOver = gameDetail?.status?.detailedState == ("Final" ?: false),
+        status = gameDetail?.status?.detailedState ?: "Unknown",
+        game = selectedGame ?: Game()
     )
 }
 

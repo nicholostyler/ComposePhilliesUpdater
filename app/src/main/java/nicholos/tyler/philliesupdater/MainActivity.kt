@@ -1,23 +1,19 @@
 package nicholos.tyler.philliesupdater
 
+import android.app.Application
 import android.os.Bundle
+
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
@@ -32,15 +28,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -48,18 +42,28 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import kotlinx.coroutines.launch
+import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.android.HiltAndroidApp
+import nicholos.tyler.philliesupdater.Pages.LeaguePage
+import nicholos.tyler.philliesupdater.Pages.SettingsPage
+import nicholos.tyler.philliesupdater.Pages.TeamSchedulePage
+import nicholos.tyler.philliesupdater.screens.HomeScreen
 import nicholos.tyler.philliesupdater.ui.theme.PhilliesUpdaterTheme
 
 val items = listOf(
     Screen.Home,
-    Screen.Schedule,
-    Screen.Team,
+    Screen.Games,
+    Screen.League,
     Screen.Settings
 )
 
-class MainActivity : ComponentActivity() {
+@HiltAndroidApp
+class PhilliesUpdaterApp : Application() {
 
+}
+
+@AndroidEntryPoint
+class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,26 +85,33 @@ class MainActivity : ComponentActivity() {
                     topBar = {
                         if (selectedTeam != null) {
                             val resolvedTitle = when {
-                                currentDestination?.route?.startsWith(Screen.GameDetail.route.substringBefore("/{")) == true -> {
+                                currentDestination?.route?.startsWith("game_detail/") == true -> {
                                     "Game Details"
                                 }
-                                currentDestination?.route == Screen.Team.route -> {
-                                    selectedTeam?.name ?: "Team"
+                                currentDestination?.route == Screen.League.route -> {
+                                    selectedTeam?.name ?: "League"
+                                }
+                                currentDestination?.route?.startsWith("team_schedule/") == true -> {
+                                    "Team Schedule"
                                 }
                                 else -> {
                                     currentScreen?.label ?: "Phillies Updater"
                                 }
                             }
 
+
                             TopAppBar(
                                 title = {
                                     Text(text = resolvedTitle)
                                 },
                                 navigationIcon = {
-                                    if (currentDestination?.route?.startsWith("game_detail") == true) {
+                                    val isGameDetail = currentDestination?.route?.startsWith("game_detail/") == true
+                                    val isTeamSchedule = currentDestination?.route?.startsWith("team_schedule/") == true
+
+                                    if (isGameDetail || isTeamSchedule) {
                                         IconButton(onClick = { navController.popBackStack() }) {
                                             Icon(
-                                                imageVector = Icons.AutoMirrored.Default.ArrowBack,
+                                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                                 contentDescription = "Back"
                                             )
                                         }
@@ -112,7 +123,10 @@ class MainActivity : ComponentActivity() {
 
                     },
                             bottomBar = {
-                                if (currentDestination?.route?.startsWith("game_detail") != true) {
+                                val isGameDetail = currentDestination?.route?.startsWith("game_detail/") == true
+                                val isTeamSchedule = currentDestination?.route?.startsWith("team_schedule/") == true
+
+                                if (!isGameDetail && !isTeamSchedule) {
                                     NavigationBar {
                                         val navBackStackEntry by navController.currentBackStackEntryAsState()
                                         val currentDestination = navBackStackEntry?.destination
@@ -129,16 +143,11 @@ class MainActivity : ComponentActivity() {
                                                 selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                                                 onClick = {
                                                     navController.navigate(screen.route) {
-                                                        // Pop up to the start destination of the graph to
-                                                        // avoid building up a large stack of destinations
-                                                        // on the back stack as users select items
+
                                                         popUpTo(navController.graph.findStartDestination().id) {
                                                             saveState = true
                                                         }
-                                                        // Avoid multiple copies of the same destination when
-                                                        // reselecting the same item
                                                         launchSingleTop = true
-                                                        // Restore state when reselecting a previously selected item
                                                         restoreState = true
                                                     }
                                                 }
@@ -151,33 +160,64 @@ class MainActivity : ComponentActivity() {
                     NavHost(
                         navController = navController,
                         startDestination = Screen.Home.route,
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = Modifier.padding(innerPadding),
+
                     ) {
                         composable(Screen.Home.route) {
-                            HomePage(modifier = Modifier.fillMaxSize(), baseballViewModel, navController)
+                            HomeScreen(
+                                modifier = Modifier.fillMaxSize(),
+                                navController
+                            )
                         }
 
-                        composable(Screen.Schedule.route) {
-                            SchedulePage(modifier = Modifier.fillMaxSize(), baseballViewModel, navController)
+                        composable(
+                            route = Screen.Games.route,
+
+                        ) {
+                            //TeamSchedulePage(modifier = Modifier.fillMaxSize(), baseballViewModel, navController)
                         }
-                        composable(Screen.Team.route) {
-                            TeamPage(modifier = Modifier.fillMaxSize(), baseballViewModel, navController)
+                        composable(
+                            route = Screen.League.route,
+
+                        ) {
+
+                            //TeamPage(modifier = Modifier.fillMaxSize(), baseballViewModel, navController)
+                            LeaguePage()
                         }
-                        composable(Screen.Settings.route) {
+                        composable(
+                            route = Screen.Settings.route,
+
+                        ) {
                             SettingsPage()
                         }
                         composable(Screen.GameDetail.route) { navBackStackEntry ->
                             val gamePk = navBackStackEntry.arguments?.getString("gamePk")?.toLongOrNull()
                             val detailUiState by baseballViewModel.detailPageUiState.collectAsState()
 
-                            if (gamePk != null && detailUiState.game.gamePk == gamePk) {
+                            if (gamePk == null) {
+                                Text("Invalid game!")
+                                return@composable
+                            } else {
                                 GameDetailPage().GameDetailScreen(
                                     modifier = Modifier.fillMaxSize(),
-                                    plays = detailUiState.plays,
-                                    game = detailUiState.game
+                                    gamePk = gamePk,
+                                    baseballVM = baseballViewModel
                                 )
+                            }
+                        }
+                        composable(Screen.TeamSchedule.route) { navBackStackEntry ->
+                            val teamId = navBackStackEntry.arguments?.getString("teamId")?.toIntOrNull()
+
+                            if (teamId == null) {
+                                Text("Invalid team!")
+                                return@composable
                             } else {
-                                Text("Game not found!")
+                                TeamSchedulePage(
+                                    viewModel = hiltViewModel(),
+                                    teamId = teamId,
+                                    onGameSelected = { game ->
+                                        navController.navigate("game_detail/${game.gamePk}")
+                                    })
                             }
                         }
 

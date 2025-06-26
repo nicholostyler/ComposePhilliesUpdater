@@ -10,12 +10,16 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
     object Home : Screen("home", "Home", Icons.Filled.Home)
-    object Schedule : Screen("schedule", "Schedule", Icons.Filled.DateRange)
-    object Team : Screen("team", "Team", Icons.Filled.People)
+    object Games : Screen("games", "Games", Icons.Filled.DateRange)
+    object League : Screen("league", "League", Icons.Filled.People)
     object Settings : Screen("settings", "Settings", Icons.Filled.Settings)
 
-    object GameDetail : Screen("game_detail/{gamePk}", "Game Detail", Icons.Filled.Info) { // Icon is optional here
+    object GameDetail : Screen("game_detail/{gamePk}", "Game Detail", Icons.Filled.Info) {
         fun createRoute(gamePk: Long) = "game_detail/$gamePk"
+    }
+
+    object TeamSchedule : Screen("team_schedule/{teamId}", "Team Schedule", Icons.Filled.Info) {
+        fun createRoute(teamId: Long) = "team_schedule/$teamId"
     }
 }
 

@@ -41,6 +41,7 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,6 +72,7 @@ fun HomeScreen(modifier: Modifier, navController: NavController, baseballVM: Hom
     val isRefreshing by baseballVM.isRefreshing.collectAsState()
     val selectedTeam by baseballVM.selectedteam.collectAsState()
     val divisionRecords by baseballVM.divisionRecords.collectAsState()
+    val divisionStandings by baseballVM.divisionStandings.collectAsState()
     val teamMVPs = homePageUiState.teamMVPs
 
     val coroutineScope = rememberCoroutineScope()
@@ -117,7 +119,6 @@ fun HomeScreen(modifier: Modifier, navController: NavController, baseballVM: Hom
                             navController.navigate(Screen.GameDetail.createRoute(gamePk = liveGameData.game.gamePk))
                         }
                     },
-                    game = liveGameData?.game ?: Game()
                 )
 
                 TenDayStretch(
@@ -133,10 +134,22 @@ fun HomeScreen(modifier: Modifier, navController: NavController, baseballVM: Hom
                     }
                 )
 
-                TeamDivisionStanding(teamRecord = divisionRecords, selectedTeam = selectedTeam)
-                TeamMVPRowList(teamMVPs)
+                TeamDivisionStanding(
+                    teamRecord = divisionRecords,
+                    selectedTeam = selectedTeam,
+                    onViewDivisionClick = {
+
+                        navController.navigate(Screen.Division.route)
+                    }
+                    )
 
 
+                TeamMVPRowList(
+                    mvps = teamMVPs,
+                    onViewRosterClick = {
+                        navController.navigate(Screen.TeamRoster.createRoute(teamId = selectedTeam.teamId.toLong()))
+                    }
+                )
             }
             }
 
@@ -144,7 +157,7 @@ fun HomeScreen(modifier: Modifier, navController: NavController, baseballVM: Hom
     }
 
 @Composable
-fun TeamDivisionStanding(teamRecord: List<TeamRecord>, selectedTeam: MLBTeam) {
+fun TeamDivisionStanding(teamRecord: List<TeamRecord>, selectedTeam: MLBTeam, onViewDivisionClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -158,9 +171,9 @@ fun TeamDivisionStanding(teamRecord: List<TeamRecord>, selectedTeam: MLBTeam) {
         )
 
         TextButton(
-            onClick = {  }
+            onClick = { onViewDivisionClick() }
         ) {
-            Text("View Division")
+            Text("Team Division")
         }
     }
 
@@ -185,9 +198,7 @@ fun TeamDivisionStanding(teamRecord: List<TeamRecord>, selectedTeam: MLBTeam) {
                     )
                 }
             }
-
         }
-
     }
 }
 
@@ -259,7 +270,7 @@ fun TenDayStretch(games: List<Game>, selectedTeam: MLBTeam, onGameClick: (Game) 
         TextButton(
             onClick = onViewScheduleClick
         ) {
-            Text("View Schedule")
+            Text("Season Schedule")
         }
     }
 
@@ -312,7 +323,6 @@ fun LiveGameScoreCard(
     leftOnBase: String,
     isGameOver: Boolean,
     status: String?,
-    game: Game,
     onGameClick: () -> Unit
 ) {
     ElevatedCard(
@@ -519,7 +529,7 @@ fun TeamStandingsSnippet(
 }
 
 @Composable
-fun TeamMVPRowList(mvps: List<LeaderSummary>) {
+fun TeamMVPRowList(mvps: List<LeaderSummary>, onViewRosterClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -538,9 +548,9 @@ fun TeamMVPRowList(mvps: List<LeaderSummary>) {
             )
 
             TextButton(
-                onClick = {  }
+                onClick = { onViewRosterClick() }
             ) {
-                Text("View Roster")
+                Text("Full Roster")
             }
         }
 

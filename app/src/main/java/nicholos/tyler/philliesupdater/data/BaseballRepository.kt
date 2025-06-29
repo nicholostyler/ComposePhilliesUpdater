@@ -21,7 +21,7 @@ class BaseballRepository @Inject constructor(
         sportId: Int,
         startDate: String,
         endDate: String,
-        teamId: Int
+        teamId: Int?
     ): GameRoot? = tryApi {
         api.getMlbSchedule(sportId, startDate, endDate, teamId)
     }

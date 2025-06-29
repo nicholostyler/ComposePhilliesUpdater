@@ -13,6 +13,7 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
     object Games : Screen("games", "Games", Icons.Filled.DateRange)
     object League : Screen("league", "League", Icons.Filled.People)
     object Settings : Screen("settings", "Settings", Icons.Filled.Settings)
+    object Division : Screen("division", "Division", Icons.Filled.Info)
 
     object GameDetail : Screen("game_detail/{gamePk}", "Game Detail", Icons.Filled.Info) {
         fun createRoute(gamePk: Long) = "game_detail/$gamePk"
@@ -20,6 +21,10 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
 
     object TeamSchedule : Screen("team_schedule/{teamId}", "Team Schedule", Icons.Filled.Info) {
         fun createRoute(teamId: Long) = "team_schedule/$teamId"
+    }
+
+    object TeamRoster : Screen("team_roster/{teamId}", "Team Roster", Icons.Filled.Info) {
+        fun createRoute(teamId: Long) = "team_roster/$teamId"
     }
 }
 

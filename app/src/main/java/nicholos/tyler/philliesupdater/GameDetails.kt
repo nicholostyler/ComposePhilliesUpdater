@@ -147,7 +147,7 @@ data class Record(
     val sportGamesBack: String? = null,
     val divisionGamesBack: String? = null,
     val conferenceGamesBack: String? = null,
-    val leagueRecord: LeagueRecord? = null, // Assuming LeagueRecord data class exists
+    val leagueRecord: LeagueRecord? = null,
     val records: Map<String, JsonElement>? = null,
     val divisionLeader: Boolean? = null,
     val wins: Int? = null,

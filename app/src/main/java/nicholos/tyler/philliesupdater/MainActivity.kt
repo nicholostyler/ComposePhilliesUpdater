@@ -30,6 +30,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -44,11 +45,15 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.HiltAndroidApp
+import nicholos.tyler.philliesupdater.Pages.DivisionPage
 import nicholos.tyler.philliesupdater.Pages.LeaguePage
+import nicholos.tyler.philliesupdater.Pages.RosterPage
 import nicholos.tyler.philliesupdater.Pages.SettingsPage
 import nicholos.tyler.philliesupdater.Pages.TeamSchedulePage
+import nicholos.tyler.philliesupdater.screens.GamesScreen
 import nicholos.tyler.philliesupdater.screens.HomeScreen
 import nicholos.tyler.philliesupdater.ui.theme.PhilliesUpdaterTheme
+import nicholos.tyler.philliesupdater.viewmodel.HomeViewModel
 
 val items = listOf(
     Screen.Home,
@@ -94,6 +99,9 @@ class MainActivity : ComponentActivity() {
                                 currentDestination?.route?.startsWith("team_schedule/") == true -> {
                                     "Team Schedule"
                                 }
+                                currentDestination?.route?.startsWith("team_schedule/") == true -> {
+                                    "Team Roster"
+                                }
                                 else -> {
                                     currentScreen?.label ?: "Phillies Updater"
                                 }
@@ -107,8 +115,9 @@ class MainActivity : ComponentActivity() {
                                 navigationIcon = {
                                     val isGameDetail = currentDestination?.route?.startsWith("game_detail/") == true
                                     val isTeamSchedule = currentDestination?.route?.startsWith("team_schedule/") == true
+                                    val isTeamRoster = currentDestination?.route?.startsWith("team_roster/") == true
 
-                                    if (isGameDetail || isTeamSchedule) {
+                                    if (isGameDetail || isTeamSchedule || isTeamRoster) {
                                         IconButton(onClick = { navController.popBackStack() }) {
                                             Icon(
                                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -125,8 +134,10 @@ class MainActivity : ComponentActivity() {
                             bottomBar = {
                                 val isGameDetail = currentDestination?.route?.startsWith("game_detail/") == true
                                 val isTeamSchedule = currentDestination?.route?.startsWith("team_schedule/") == true
+                                val isTeamRoster = currentDestination?.route?.startsWith("team_roster/") == true
 
-                                if (!isGameDetail && !isTeamSchedule) {
+
+                                if (!isGameDetail && !isTeamSchedule && !isTeamRoster) {
                                     NavigationBar {
                                         val navBackStackEntry by navController.currentBackStackEntryAsState()
                                         val currentDestination = navBackStackEntry?.destination
@@ -174,6 +185,7 @@ class MainActivity : ComponentActivity() {
                             route = Screen.Games.route,
 
                         ) {
+                            GamesScreen()
                             //TeamSchedulePage(modifier = Modifier.fillMaxSize(), baseballViewModel, navController)
                         }
                         composable(
@@ -181,7 +193,6 @@ class MainActivity : ComponentActivity() {
 
                         ) {
 
-                            //TeamPage(modifier = Modifier.fillMaxSize(), baseballViewModel, navController)
                             LeaguePage()
                         }
                         composable(
@@ -218,6 +229,42 @@ class MainActivity : ComponentActivity() {
                                     onGameSelected = { game ->
                                         navController.navigate("game_detail/${game.gamePk}")
                                     })
+                            }
+                        }
+                        composable(Screen.TeamRoster.route) { navBackStackEntry ->
+                            val teamId = navBackStackEntry.arguments?.getString("teamId")?.toIntOrNull()
+
+                            if (teamId == null) {
+                                Text("Invalid team!")
+                                return@composable
+                            } else {
+                                RosterPage(
+                                    viewModel = hiltViewModel(),
+                                    teamId = teamId,
+                                    )
+                            }
+                        }
+                        composable(Screen.Division.route) { navBackStackEntry ->
+                            val parentEntry = remember(navBackStackEntry) {
+                                navController.getBackStackEntry(Screen.Home.route)
+                            }
+                            val homeViewModel: HomeViewModel = hiltViewModel(parentEntry)
+                            val divisionRecords by homeViewModel.divisionStandings.collectAsState()
+
+                            val isDivisionReady = remember(divisionRecords) {
+                                divisionRecords.division != null && divisionRecords.teamRecords?.isNotEmpty() == true
+                            }
+
+
+
+                            if (divisionRecords == null) {
+                                Text("Invalid division!")
+                                return@composable
+                            } else {
+                                DivisionPage(
+                                    viewModel = hiltViewModel(),
+                                    divisionRecords = divisionRecords,
+                                )
                             }
                         }
 

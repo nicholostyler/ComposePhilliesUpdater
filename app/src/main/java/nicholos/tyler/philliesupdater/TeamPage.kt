@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import nicholos.tyler.philliesupdater.screens.TeamRoster
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -43,48 +44,5 @@ fun TeamPage(modifier: Modifier, baseballVM: BaseballViewModel, navController: N
     }
 }
 
-@Composable
-fun TeamHeader(team: TeamDetails) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Text(team.name ?: "Team Name", style = MaterialTheme.typography.headlineMedium)
-        Text("${team.locationName} • ${team.division?.name} Division", style = MaterialTheme.typography.bodyLarge)
-        team.record?.let {
-            Text("W-L: ${it.wins}-${it.losses} (${it.winningPercentage})", style = MaterialTheme.typography.bodyMedium)
-        }
-    }
-}
 
-
-@Composable
-fun TeamRoster(roster: List<PlayerRoster>) {
-    val groupedByPosition = roster.groupBy { it.position.name }
-
-    LazyColumn {
-        groupedByPosition.forEach { (positionName, players) ->
-            item {
-                Text(
-                    text = positionName ?: "Unknown Position",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)
-                )
-            }
-
-            items(players) { player ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(player.person.fullName)
-                    Text("#${player.jerseyNumber}")
-                }
-            }
-        }
-    }
-}
 

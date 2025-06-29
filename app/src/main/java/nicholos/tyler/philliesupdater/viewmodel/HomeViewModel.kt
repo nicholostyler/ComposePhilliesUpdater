@@ -17,6 +17,7 @@ import nicholos.tyler.philliesupdater.Date
 import nicholos.tyler.philliesupdater.Game
 import nicholos.tyler.philliesupdater.LiveGameData
 import nicholos.tyler.philliesupdater.MLBTeam
+import nicholos.tyler.philliesupdater.StandingsRecord
 import nicholos.tyler.philliesupdater.StandingsResponse
 import nicholos.tyler.philliesupdater.TeamRecord
 import nicholos.tyler.philliesupdater.data.BaseballRepository
@@ -80,6 +81,9 @@ class HomeViewModel @Inject constructor(
     private val _divisionRecords = MutableStateFlow<List<TeamRecord>>(emptyList())
     val divisionRecords: StateFlow<List<TeamRecord>> = _divisionRecords.asStateFlow()
 
+    private val _divisionResponse = MutableStateFlow<StandingsRecord>(StandingsRecord())
+    val divisionStandings: StateFlow<StandingsRecord> = _divisionResponse.asStateFlow()
+
     init {
         viewModelScope.launch {
             settingsRepository.selectedTeam
@@ -108,12 +112,28 @@ class HomeViewModel @Inject constructor(
 
                 // Fetch standings
                 val leagueStandings: StandingsResponse? = baseballRepository.fetchStandings(leagueId)
+                val standingsResponse = leagueStandings?.records
+                    ?.firstOrNull { it.division?.id == selectedTeam.Divisions.divisionId }
+
+                if (standingsResponse != null) {
+                    _divisionResponse.value = standingsResponse
+                }
+
 
                 _divisionRecords.value = leagueStandings?.records
                     ?.firstOrNull { it.division?.id == selectedTeam.Divisions.divisionId }
                     ?.teamRecords
                     ?.filterNotNull()
                     .orEmpty()
+
+                val response = leagueStandings?.records
+                    ?.firstOrNull { it.division?.id == selectedTeam.Divisions.divisionId }
+
+                if (response != null) {
+                    //_divisionResponse.value = response
+                }
+
+
 
                     val mappedLiveData = if (todayGame?.gamePk != null) {
                         val details = baseballRepository.fetchGameDetails(todayGame.gamePk)
